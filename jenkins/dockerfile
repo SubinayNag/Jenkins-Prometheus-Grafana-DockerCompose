@@ -1,0 +1,28 @@
+FROM centos:centos7.9.2009
+
+############ Configuring Jenkins ##################
+RUN yum update -y && yum install -y git && yum install -y wget
+
+ARG user=jenkins
+ARG group=jenkins
+ARG uid=1000
+ARG gid=1000
+ARG http_port=8080
+ARG agent_port=50000
+ARG JENKINS_HOME=/var/jenkins_home
+ARG REF=/usr/share/jenkins/ref
+
+ENV JENKINS_HOME $JENKINS_HOME
+ENV JENKINS_SLAVE_AGENT_PORT ${agent_port}
+ENV REF $REF
+
+RUN mkdir -p $JENKINS_HOME \
+  && chown ${uid}:${gid} $JENKINS_HOME \
+  && groupadd -g ${gid} ${group} \
+  && useradd -N -d "$JENKINS_HOME" -u ${uid} -g ${gid} -m -s /bin/bash ${user} 
+
+RUN wget https://get.jenkins.io/war-stable/2.289.1/jenkins.war && pwd && yum install -y java-11-openjdk-devel 
+
+VOLUME $JENKINS_HOME
+ENTRYPOINT ["java", "-jar", "jenkins.war"]
+

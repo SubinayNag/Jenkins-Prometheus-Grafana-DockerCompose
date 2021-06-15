@@ -1,0 +1,36 @@
+version: '3'
+services:
+    jenkins-service:
+        build: ./jenkins
+        ports:
+            - 8080:8080
+            - 50000:50000
+        volumes:
+            - jenkins-data:/var/jenkins_home
+    prometheus-service:
+        build: ./prometheus
+        ports:
+            - 9090:9090
+        depends_on:
+            - jenkins-service
+        volumes:
+            - prometheus-data:/prometheus
+    grafana-service:
+        image: grafana/grafana
+        container_name: grafana-container
+        restart: always
+        ports:
+            - 3000:3000
+        volumes:
+            - grafana-data:/var/lib/grafana
+        depends_on:
+            - prometheus-service
+            - jenkins-service
+volumes:
+    jenkins-data:
+        driver: local
+    prometheus-data:
+        driver: local
+    grafana-data:
+        driver: local
+            

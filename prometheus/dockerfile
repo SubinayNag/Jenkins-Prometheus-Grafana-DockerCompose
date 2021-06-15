@@ -1,0 +1,42 @@
+FROM centos:centos7.9.2009
+
+ARG puid=1001
+ARG pgid=1001
+ARG puser=prometheus
+ARG pgroup=prometheus
+ARG PROMETHUES_HOME=/etc/prometheus
+ARG PROMETHUES_VOLUME=/prometheus
+
+ENV PROMETHUES_HOME $PROMETHUES_HOME
+ENV PROMETHUES_VOLUME $PROMETHUES_VOLUME
+
+RUN mkdir -p $PROMETHUES_HOME \
+  && chown ${puid}:${pgid} $PROMETHUES_HOME \
+  && groupadd -g ${pgid} ${pgroup} \
+  && useradd -N -d "$PROMETHUES_HOME" -u ${puid} -g ${pgid} -m -s /bin/bash ${puser}\
+  && yum update -y && yum install -y wget && yum install -y git
+
+ARG PROMETHUES_LIB=/var/lib/prometheus
+ENV PROMETHUES_LIB $PROMETHUES_LIB
+RUN mkdir -p $PROMETHUES_LIB && chown ${puser}:${pgroup} $PROMETHUES_LIB
+
+RUN wget https://github.com/prometheus/prometheus/releases/download/v2.27.1/prometheus-2.27.1.linux-amd64.tar.gz && mkdir /promethus
+RUN tar -xvzf prometheus-2.27.1.linux-amd64.tar.gz -C /promethus
+RUN cp /promethus/prometheus-2.27.1.linux-amd64/prometheus /usr/local/bin/ \
+  && cp /promethus/prometheus-2.27.1.linux-amd64/promtool /usr/local/bin/ \
+  && chown ${puser}:${pgroup} /usr/local/bin/prometheus \
+  && chown ${puser}:${pgroup} /usr/local/bin/promtool \
+  && cp -r /promethus/prometheus-2.27.1.linux-amd64/consoles /etc/prometheus \
+  && cp -r /promethus/prometheus-2.27.1.linux-amd64/console_libraries /etc/prometheus \
+  && chown -R ${puser}:${pgroup} /etc/prometheus/consoles /etc/prometheus/console_libraries
+
+ADD prometheus.yml /promethus
+
+RUN cp /promethus/prometheus.yml /etc/prometheus/ && chown ${puser}:${pgroup} /etc/prometheus/prometheus.yml
+VOLUME $PROMETHUES_VOLUME
+ENTRYPOINT [ "/usr/local/bin/prometheus" ]
+CMD        [ "--config.file=/etc/prometheus/prometheus.yml", \
+             "--storage.tsdb.path=/etc/prometheus", \
+             "--web.console.libraries=/etc/prometheus/console_libraries", \
+             "--web.console.templates=/etc/prometheus/consoles" ]
+
