@@ -11,3 +11,6 @@ Grafana: http://localhost:3000/
 
 Grafana Configuration:
   Adding datasource as prometheus URL: http://prometheus-service:9090
+  
+Run Docker Compose:
+  docker-compose docker-compose.yml up -d
